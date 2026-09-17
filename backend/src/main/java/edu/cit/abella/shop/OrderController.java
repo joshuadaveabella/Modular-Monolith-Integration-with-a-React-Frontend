@@ -1,15 +1,13 @@
 package edu.cit.abella.shop;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/orders")
 public class OrderController {
 
     private final OrderService orderService;
@@ -18,20 +16,52 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-    @PostMapping("/orders")
+    @PostMapping
     public ResponseEntity<?> placeOrder(@RequestBody OrderRequest request) {
-        // Malformed request (missing fields) -> genuine 400.
-        // Everything else (unknown product, insufficient stock, bad quantity
-        // value) is a valid business outcome and comes back as 200 with
-        // status: "REJECTED" and a reason - not an HTTP error.
-        if (request.getProductId() == null || request.getProductId().isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "productId is required"));
+        // A malformed request (no items at all, or a line missing fields) is
+        // a genuine 400. Business outcomes - unknown product, not enough
+        // stock - come back as 200 with status "REJECTED" and a reason.
+        if (request.getItems() == null || request.getItems().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "items must contain at least one line"));
         }
-        if (request.getQuantity() == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "quantity is required"));
+        for (OrderRequest.LineItem line : request.getItems()) {
+            if (line.getProductId() == null || line.getProductId().isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "each item requires a productId"));
+            }
+            if (line.getQuantity() == null) {
+                return ResponseEntity.badRequest().body(Map.of("message", "each item requires a quantity"));
+            }
         }
 
-        OrderResponse response = orderService.placeOrder(request.getProductId(), request.getQuantity());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(orderService.placeOrder(request.getItems()));
+    }
+
+    @PostMapping("/{orderId}/cancel")
+    public ResponseEntity<?> cancelOrder(@PathVariable Long orderId) {
+        OrderEntity cancelled = orderService.cancelOrder(orderId);
+
+        return ResponseEntity.ok(Map.of(
+                "orderId", cancelled.getOrderId(),
+                "status", cancelled.getStatus(),
+                "message", "Order cancelled and stock returned",
+                "inventory", orderService.currentInventory()
+        ));
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getOrders() {
+        return ResponseEntity.ok(orderService.getOrderHistory());
+    }
+
+    // --- error mapping ---
+
+    @ExceptionHandler(OrderNotFoundException.class)
+    public ResponseEntity<?> handleNotFound(OrderNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+    }
+
+    @ExceptionHandler({OrderAlreadyCancelledException.class, OrderNotCancellableException.class})
+    public ResponseEntity<?> handleConflict(RuntimeException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
     }
 }

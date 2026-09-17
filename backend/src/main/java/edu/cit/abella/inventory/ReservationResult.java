@@ -1,6 +1,6 @@
 package edu.cit.abella.inventory;
 
-// Public - returned by InventoryService.reserve() to the Order module.
+// Public - returned by reserve() and restock() to the Order module.
 public class ReservationResult {
 
     private final boolean success;

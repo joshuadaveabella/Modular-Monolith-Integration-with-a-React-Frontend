@@ -13,9 +13,9 @@
 
     <groupId>edu.cit.abella</groupId>
     <artifactId>shop-inventory</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.2-SNAPSHOT</version>
     <name>shop-inventory</name>
-    <description>Order + Inventory modules over Supabase Postgres</description>
+    <description>Order + Inventory + Notification modules over Supabase Postgres</description>
 
     <properties>
         <java.version>17</java.version>

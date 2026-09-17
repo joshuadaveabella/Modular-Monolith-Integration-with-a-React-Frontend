@@ -3,9 +3,8 @@ package edu.cit.abella;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-// Living in the parent package edu.cit.abella means component scanning
-// automatically covers both edu.cit.abella.shop and edu.cit.abella.inventory
-// without needing an explicit @ComponentScan.
+// Parent package, so component scanning picks up shop, inventory,
+// notification, events and config without an explicit @ComponentScan.
 @SpringBootApplication
 public class ShopInventoryApplication {
 

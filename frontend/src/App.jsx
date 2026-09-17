@@ -1,98 +1,125 @@
-import { useState } from 'react'
-import axios from 'axios'
-
-// Fixed to match the seeded inventory rows. The assignment doesn't call
-// for a GET endpoint to list products dynamically, so this is hardcoded.
-const PRODUCTS = [
-  { id: 'P100', label: 'P100 - Wireless Mouse' },
-  { id: 'P200', label: 'P200 - Mechanical Keyboard' },
-  { id: 'P300', label: 'P300 - USB-C Hub' },
-]
-
-const API_URL = 'http://localhost:8080/api/orders'
+import { useCallback, useEffect, useState } from 'react'
+import {
+  fetchInventory,
+  fetchOrders,
+  fetchNotifications,
+  placeOrder,
+  cancelOrder,
+} from './api/shopApi.js'
+import Cart from './components/Cart.jsx'
+import InventoryTable from './components/InventoryTable.jsx'
+import OrderHistory from './components/OrderHistory.jsx'
+import NotificationFeed from './components/NotificationFeed.jsx'
 
 function App() {
-  const [productId, setProductId] = useState(PRODUCTS[0].id)
-  const [quantity, setQuantity] = useState(1)
+  const [inventory, setInventory] = useState([])
+  const [threshold, setThreshold] = useState(5)
+  const [orders, setOrders] = useState([])
+  const [notifications, setNotifications] = useState([])
+
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [cancellingId, setCancellingId] = useState(null)
 
-  async function handleSubmit(e) {
-    e.preventDefault()
+  // Single refresh used after every mutation, so the inventory table,
+  // order history and activity feed never drift out of sync.
+  const refreshAll = useCallback(async () => {
+    try {
+      const [inv, ord, notes] = await Promise.all([
+        fetchInventory(),
+        fetchOrders(),
+        fetchNotifications(),
+      ])
+      setInventory(inv.data.items)
+      setThreshold(inv.data.lowStockThreshold)
+      setOrders(ord.data)
+      setNotifications(notes.data)
+    } catch (err) {
+      setError('Could not reach the server. Is the backend running on port 8080?')
+    }
+  }, [])
+
+  useEffect(() => {
+    refreshAll()
+  }, [refreshAll])
+
+  async function handlePlaceOrder(items) {
     setError('')
     setResult(null)
+    setSubmitting(true)
 
-    if (!quantity || Number(quantity) <= 0) {
-      setError('Quantity must be greater than zero.')
-      return
-    }
-
-    setLoading(true)
     try {
-      const response = await axios.post(API_URL, {
-        productId,
-        quantity: Number(quantity),
-      })
+      const response = await placeOrder(items)
       setResult(response.data)
+      await refreshAll()
     } catch (err) {
-      if (err.response?.data?.message) {
-        setError(err.response.data.message)
-      } else {
-        setError('Could not reach the server.')
-      }
+      setError(err.response?.data?.message ?? 'Something went wrong placing the order.')
     } finally {
-      setLoading(false)
+      setSubmitting(false)
+    }
+  }
+
+  async function handleCancel(orderId) {
+    setError('')
+    setResult(null)
+    setCancellingId(orderId)
+
+    try {
+      const response = await cancelOrder(orderId)
+      setResult({
+        status: 'CANCELLED',
+        reason: response.data.message,
+        items: [],
+      })
+      await refreshAll()
+    } catch (err) {
+      // 404 (no such order) and 409 (already cancelled / not cancellable)
+      // both land here with the backend's message.
+      setError(err.response?.data?.message ?? 'Could not cancel that order.')
+    } finally {
+      setCancellingId(null)
     }
   }
 
   return (
-    <div className="page-container">
-      <h1>Place an Order</h1>
+    <div className="app">
+      <header>
+        <h1>Order &amp; Inventory Dashboard</h1>
+      </header>
 
-      <form onSubmit={handleSubmit}>
-        <label htmlFor="product">Product</label>
-        <select id="product" value={productId} onChange={(e) => setProductId(e.target.value)}>
-          {PRODUCTS.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.label}
-            </option>
-          ))}
-        </select>
-
-        <label htmlFor="quantity">Quantity</label>
-        <input
-          id="quantity"
-          type="number"
-          min="1"
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
-        />
-
-        <button type="submit" disabled={loading}>
-          {loading ? 'Placing order...' : 'Submit Order'}
-        </button>
-      </form>
-
-      {error && <div className="error-message">{error}</div>}
+      {error && <div className="banner banner-error">{error}</div>}
 
       {result && (
-        <div className={`result-box ${result.status === 'CONFIRMED' ? 'result-confirmed' : 'result-rejected'}`}>
-          <p>
-            <strong>Status:</strong> {result.status}
-          </p>
-          {result.reason && (
-            <p>
-              <strong>Reason:</strong> {result.reason}
-            </p>
-          )}
-          {result.inventory && (
-            <p>
-              <strong>Remaining stock for {result.inventory.name}:</strong> {result.inventory.stock}
-            </p>
+        <div className={`banner banner-${result.status.toLowerCase()}`}>
+          <strong>
+            {result.orderId ? `Order #${result.orderId}: ` : ''}
+            {result.status}
+          </strong>
+          {result.reason && <div>{result.reason}</div>}
+          {result.items?.length > 0 && (
+            <ul className="outcome-list">
+              {result.items.map((item, i) => (
+                <li key={i}>
+                  {item.productId} x {item.quantity} - {item.outcome}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       )}
+
+      <div className="columns">
+        <div className="col">
+          <Cart products={inventory} onSubmit={handlePlaceOrder} submitting={submitting} />
+          <InventoryTable items={inventory} threshold={threshold} />
+        </div>
+
+        <div className="col">
+          <OrderHistory orders={orders} onCancel={handleCancel} cancellingId={cancellingId} />
+          <NotificationFeed notifications={notifications} />
+        </div>
+      </div>
     </div>
   )
 }

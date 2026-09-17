@@ -5,9 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-// Package-private: the Order module has no business knowing about this
-// entity's shape. It only ever sees InventoryItem/ReservationResult,
-// returned through the InventoryService interface.
+// Package-private: an implementation detail of this module.
 @Entity
 @Table(name = "inventory")
 class InventoryEntity {

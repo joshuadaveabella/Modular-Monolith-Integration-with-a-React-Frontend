@@ -3,6 +3,8 @@ package edu.cit.abella.shop;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -13,12 +15,7 @@ public class OrderEntity {
     @Column(name = "order_id")
     private Long orderId;
 
-    @Column(name = "product_id", nullable = false)
-    private String productId;
-
-    @Column(nullable = false)
-    private int quantity;
-
+    // CONFIRMED | REJECTED | CANCELLED
     @Column(nullable = false)
     private String status;
 
@@ -26,6 +23,11 @@ public class OrderEntity {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    // Cascade + orphanRemoval so saving the order persists its line items
+    // in the same transaction.
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<OrderItemEntity> items = new ArrayList<>();
 
     protected OrderEntity() {
         // required by JPA
@@ -36,24 +38,13 @@ public class OrderEntity {
         this.createdAt = LocalDateTime.now();
     }
 
+    public void addItem(String productId, int quantity) {
+        OrderItemEntity item = new OrderItemEntity(this, productId, quantity);
+        this.items.add(item);
+    }
+
     public Long getOrderId() {
         return orderId;
-    }
-
-    public String getProductId() {
-        return productId;
-    }
-
-    public void setProductId(String productId) {
-        this.productId = productId;
-    }
-
-    public int getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
     }
 
     public String getStatus() {
@@ -74,5 +65,9 @@ public class OrderEntity {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public List<OrderItemEntity> getItems() {
+        return items;
     }
 }

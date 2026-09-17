@@ -1,7 +1,7 @@
 package edu.cit.abella.inventory;
 
-// Public - this is the shape the Order module (and eventually the REST
-// response) is allowed to see. It's a plain snapshot, not the JPA entity.
+// Public - part of the module's published boundary, along with
+// InventoryService and ReservationResult.
 public class InventoryItem {
 
     private final String productId;

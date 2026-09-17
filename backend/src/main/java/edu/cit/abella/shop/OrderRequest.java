@@ -1,23 +1,38 @@
 package edu.cit.abella.shop;
 
+import java.util.List;
+
 public class OrderRequest {
 
-    private String productId;
-    private Integer quantity; // boxed so we can tell "missing" apart from 0
+    private List<LineItem> items;
 
-    public String getProductId() {
-        return productId;
+    public List<LineItem> getItems() {
+        return items;
     }
 
-    public void setProductId(String productId) {
-        this.productId = productId;
+    public void setItems(List<LineItem> items) {
+        this.items = items;
     }
 
-    public Integer getQuantity() {
-        return quantity;
-    }
+    public static class LineItem {
 
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
+        private String productId;
+        private Integer quantity; // boxed so "missing" is distinguishable from 0
+
+        public String getProductId() {
+            return productId;
+        }
+
+        public void setProductId(String productId) {
+            this.productId = productId;
+        }
+
+        public Integer getQuantity() {
+            return quantity;
+        }
+
+        public void setQuantity(Integer quantity) {
+            this.quantity = quantity;
+        }
     }
 }
