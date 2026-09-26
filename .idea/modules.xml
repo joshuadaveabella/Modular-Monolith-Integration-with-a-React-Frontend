@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modular-monolith-lab2.iml" filepath="$PROJECT_DIR$/.idea/modular-monolith-lab2.iml" />
-      <module fileurl="file://$PROJECT_DIR$/backend/shop-inventory.iml" filepath="$PROJECT_DIR$/backend/shop-inventory.iml" />
     </modules>
   </component>
 </project>

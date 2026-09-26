@@ -16,7 +16,6 @@ export function fetchNotifications() {
   return api.get('/notifications')
 }
 
-// items: [{ productId, quantity }, ...]
 export function placeOrder(items) {
   return api.post('/orders', { items })
 }

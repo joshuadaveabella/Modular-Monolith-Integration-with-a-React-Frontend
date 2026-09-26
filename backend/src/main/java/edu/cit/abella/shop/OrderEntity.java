@@ -15,7 +15,6 @@ public class OrderEntity {
     @Column(name = "order_id")
     private Long orderId;
 
-    // CONFIRMED | REJECTED | CANCELLED
     @Column(nullable = false)
     private String status;
 
@@ -24,13 +23,10 @@ public class OrderEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // Cascade + orphanRemoval so saving the order persists its line items
-    // in the same transaction.
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<OrderItemEntity> items = new ArrayList<>();
 
     protected OrderEntity() {
-        // required by JPA
     }
 
     @PrePersist
@@ -39,8 +35,7 @@ public class OrderEntity {
     }
 
     public void addItem(String productId, int quantity) {
-        OrderItemEntity item = new OrderItemEntity(this, productId, quantity);
-        this.items.add(item);
+        items.add(new OrderItemEntity(this, productId, quantity));
     }
 
     public Long getOrderId() {

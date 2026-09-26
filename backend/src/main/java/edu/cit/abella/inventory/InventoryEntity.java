@@ -5,7 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-// Package-private: an implementation detail of this module.
 @Entity
 @Table(name = "inventory")
 class InventoryEntity {
@@ -21,7 +20,6 @@ class InventoryEntity {
     private int stock;
 
     protected InventoryEntity() {
-        // required by JPA
     }
 
     String getProductId() {

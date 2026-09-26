@@ -1,8 +1,9 @@
 package edu.cit.abella.events;
 
-// Published by the Inventory module after a successful reserve() leaves a
-// product below the configured threshold. Separate from the order events so
-// the Notification module can log it as a distinct "reorder needed" entry.
+// Published by Inventory after a successful reserve() leaves a product
+// below the configured threshold. In Lab 3 this is consumed by TWO
+// listeners: NotificationListener (logs it) and the new AutoReorderListener
+// in the inventory module (places a real purchase order via SupplierGateway).
 public class LowStockEvent {
 
     private final String productId;

@@ -1,11 +1,10 @@
 package edu.cit.abella.inventory;
 
-// Public - returned by reserve() and restock() to the Order module.
 public class ReservationResult {
 
     private final boolean success;
-    private final String reason; // null when success is true
-    private final InventoryItem inventory; // null only if the product doesn't exist
+    private final String reason;
+    private final InventoryItem inventory;
 
     public ReservationResult(boolean success, String reason, InventoryItem inventory) {
         this.success = success;

@@ -20,10 +20,8 @@ public class NotificationController {
     @GetMapping
     public ResponseEntity<List<NotificationView>> getNotifications() {
         List<NotificationView> views = notificationRepository.findAllByOrderByNotificationIdDesc().stream()
-                .map(n -> new NotificationView(
-                        n.getNotificationId(), n.getType(), n.getMessage(), n.getCreatedAt()))
+                .map(n -> new NotificationView(n.getNotificationId(), n.getType(), n.getMessage(), n.getCreatedAt()))
                 .toList();
-
         return ResponseEntity.ok(views);
     }
 }

@@ -1,7 +1,5 @@
 package edu.cit.abella.inventory;
 
-// Public - part of the module's published boundary, along with
-// InventoryService and ReservationResult.
 public class InventoryItem {
 
     private final String productId;

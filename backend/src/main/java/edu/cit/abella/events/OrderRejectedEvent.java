@@ -1,6 +1,5 @@
 package edu.cit.abella.events;
 
-// Published by OrderService when an order is REJECTED.
 public class OrderRejectedEvent {
 
     private final Long orderId; // may be null if nothing was persisted

@@ -4,7 +4,6 @@ public class ItemOutcome {
 
     private final String productId;
     private final int quantity;
-    // RESERVED | INSUFFICIENT_STOCK | PRODUCT_NOT_FOUND | INVALID_QUANTITY | NOT_ATTEMPTED
     private final String outcome;
 
     public ItemOutcome(String productId, int quantity, String outcome) {

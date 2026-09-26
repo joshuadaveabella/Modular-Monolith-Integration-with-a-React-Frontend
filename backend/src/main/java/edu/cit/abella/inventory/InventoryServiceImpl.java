@@ -8,10 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-// Package-private (no "public" modifier). Spring wires it by interface
-// type; no class outside this package can name it. That is what makes
-// "Order may depend only on the InventoryService interface" a compiler
-// guarantee rather than a convention.
+// Package-private (no "public" modifier). This is what makes "Order/
+// Inventory clients may depend only on the interface" a compiler guarantee.
 @Service
 class InventoryServiceImpl implements InventoryService {
 
@@ -62,11 +60,6 @@ class InventoryServiceImpl implements InventoryService {
 
         InventoryItem item = toItem(entity);
 
-        // Low-stock business rule. Published as its own event type so the
-        // Notification module can log it separately from order outcomes.
-        // Note this fires per successful reserve(), so a multi-item order
-        // can emit several LowStock events in one request - one per product
-        // that crossed the threshold.
         if (entity.getStock() < lowStockThreshold) {
             eventPublisher.publishEvent(new LowStockEvent(
                     entity.getProductId(), entity.getName(), entity.getStock(), lowStockThreshold));
@@ -90,8 +83,6 @@ class InventoryServiceImpl implements InventoryService {
         entity.setStock(entity.getStock() + quantity);
         inventoryRepository.save(entity);
 
-        // Deliberately no LowStock event here - restocking moves stock up,
-        // so it can only ever resolve a low-stock condition, never cause one.
         return new ReservationResult(true, null, toItem(entity));
     }
 

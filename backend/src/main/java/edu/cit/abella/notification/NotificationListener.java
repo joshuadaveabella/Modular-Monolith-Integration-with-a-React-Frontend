@@ -3,15 +3,14 @@ package edu.cit.abella.notification;
 import edu.cit.abella.events.LowStockEvent;
 import edu.cit.abella.events.OrderPlacedEvent;
 import edu.cit.abella.events.OrderRejectedEvent;
+import edu.cit.abella.events.SupplierOrderDeliveredEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-// This class is the ONLY thing in the application that reacts to order
-// outcomes for notification purposes. Note what it imports: the three event
-// classes from edu.cit.abella.events, and nothing else. It holds no
-// reference to OrderService or InventoryService, and neither of those
-// imports anything from this package. The coupling runs through the event
-// types alone.
+// Still imports only event classes from edu.cit.abella.events - no
+// reference to OrderService, InventoryService, or anything in the
+// supplier package. Adding the new delivered-order listener did not
+// require importing a single thing from edu.cit.abella.supplier.
 @Component
 class NotificationListener {
 
@@ -42,5 +41,12 @@ class NotificationListener {
                 + " (" + event.getProductId() + ") down to " + event.getRemainingStock()
                 + ", below threshold of " + event.getThreshold();
         notificationRepository.save(new NotificationEntity("LOW_STOCK", message));
+    }
+
+    @EventListener
+    void onSupplierOrderDelivered(SupplierOrderDeliveredEvent event) {
+        String message = "Restocked " + event.getUnitsDelivered() + " unit(s) of "
+                + event.getProductId() + " from supplier order " + event.getPoNumber();
+        notificationRepository.save(new NotificationEntity("SUPPLIER_ORDER_DELIVERED", message));
     }
 }

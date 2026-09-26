@@ -10,7 +10,6 @@ function Cart({ products, onSubmit, submitting }) {
 
   function handleAdd() {
     setLocalError('')
-
     const productId = selectedProduct || available[0]?.productId
     if (!productId) {
       setLocalError('No more products to add.')
@@ -20,7 +19,6 @@ function Cart({ products, onSubmit, submitting }) {
       setLocalError('Quantity must be greater than zero.')
       return
     }
-
     const product = products.find((p) => p.productId === productId)
     setLines([...lines, { productId, name: product?.name ?? productId, quantity: Number(quantity) }])
     setSelectedProduct('')
@@ -32,22 +30,16 @@ function Cart({ products, onSubmit, submitting }) {
   }
 
   function handleQuantityChange(productId, newQuantity) {
-    setLines(
-      lines.map((l) =>
-        l.productId === productId ? { ...l, quantity: Number(newQuantity) } : l,
-      ),
-    )
+    setLines(lines.map((l) => (l.productId === productId ? { ...l, quantity: Number(newQuantity) } : l)))
   }
 
   function handleSubmit(e) {
     e.preventDefault()
     setLocalError('')
-
     if (lines.length === 0) {
       setLocalError('Add at least one item to the cart.')
       return
     }
-
     onSubmit(lines.map((l) => ({ productId: l.productId, quantity: l.quantity })))
   }
 
@@ -67,7 +59,6 @@ function Cart({ products, onSubmit, submitting }) {
             </option>
           ))}
         </select>
-
         <input
           type="number"
           min="1"
@@ -75,7 +66,6 @@ function Cart({ products, onSubmit, submitting }) {
           onChange={(e) => setQuantity(e.target.value)}
           disabled={available.length === 0}
         />
-
         <button type="button" onClick={handleAdd} disabled={available.length === 0}>
           Add to cart
         </button>
@@ -95,9 +85,7 @@ function Cart({ products, onSubmit, submitting }) {
           <tbody>
             {lines.map((l) => (
               <tr key={l.productId}>
-                <td>
-                  {l.productId} - {l.name}
-                </td>
+                <td>{l.productId} - {l.name}</td>
                 <td>
                   <input
                     type="number"

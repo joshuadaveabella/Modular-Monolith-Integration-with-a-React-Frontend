@@ -13,7 +13,6 @@ class NotificationEntity {
     @Column(name = "notification_id")
     private Long notificationId;
 
-    // ORDER_CONFIRMED | ORDER_REJECTED | LOW_STOCK
     @Column(nullable = false)
     private String type;
 
@@ -24,7 +23,6 @@ class NotificationEntity {
     private LocalDateTime createdAt;
 
     protected NotificationEntity() {
-        // required by JPA
     }
 
     NotificationEntity(String type, String message) {

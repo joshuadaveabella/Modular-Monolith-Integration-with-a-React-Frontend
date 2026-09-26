@@ -22,8 +22,6 @@ function App() {
   const [submitting, setSubmitting] = useState(false)
   const [cancellingId, setCancellingId] = useState(null)
 
-  // Single refresh used after every mutation, so the inventory table,
-  // order history and activity feed never drift out of sync.
   const refreshAll = useCallback(async () => {
     try {
       const [inv, ord, notes] = await Promise.all([
@@ -48,7 +46,6 @@ function App() {
     setError('')
     setResult(null)
     setSubmitting(true)
-
     try {
       const response = await placeOrder(items)
       setResult(response.data)
@@ -64,18 +61,11 @@ function App() {
     setError('')
     setResult(null)
     setCancellingId(orderId)
-
     try {
       const response = await cancelOrder(orderId)
-      setResult({
-        status: 'CANCELLED',
-        reason: response.data.message,
-        items: [],
-      })
+      setResult({ status: 'CANCELLED', reason: response.data.message, items: [] })
       await refreshAll()
     } catch (err) {
-      // 404 (no such order) and 409 (already cancelled / not cancellable)
-      // both land here with the backend's message.
       setError(err.response?.data?.message ?? 'Could not cancel that order.')
     } finally {
       setCancellingId(null)
@@ -100,9 +90,7 @@ function App() {
           {result.items?.length > 0 && (
             <ul className="outcome-list">
               {result.items.map((item, i) => (
-                <li key={i}>
-                  {item.productId} x {item.quantity} - {item.outcome}
-                </li>
+                <li key={i}>{item.productId} x {item.quantity} - {item.outcome}</li>
               ))}
             </ul>
           )}
@@ -114,7 +102,6 @@ function App() {
           <Cart products={inventory} onSubmit={handlePlaceOrder} submitting={submitting} />
           <InventoryTable items={inventory} threshold={threshold} />
         </div>
-
         <div className="col">
           <OrderHistory orders={orders} onCancel={handleCancel} cancellingId={cancellingId} />
           <NotificationFeed notifications={notifications} />

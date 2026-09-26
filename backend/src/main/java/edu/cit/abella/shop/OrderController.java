@@ -18,9 +18,6 @@ public class OrderController {
 
     @PostMapping
     public ResponseEntity<?> placeOrder(@RequestBody OrderRequest request) {
-        // A malformed request (no items at all, or a line missing fields) is
-        // a genuine 400. Business outcomes - unknown product, not enough
-        // stock - come back as 200 with status "REJECTED" and a reason.
         if (request.getItems() == null || request.getItems().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "items must contain at least one line"));
         }
@@ -32,14 +29,12 @@ public class OrderController {
                 return ResponseEntity.badRequest().body(Map.of("message", "each item requires a quantity"));
             }
         }
-
         return ResponseEntity.ok(orderService.placeOrder(request.getItems()));
     }
 
     @PostMapping("/{orderId}/cancel")
     public ResponseEntity<?> cancelOrder(@PathVariable Long orderId) {
         OrderEntity cancelled = orderService.cancelOrder(orderId);
-
         return ResponseEntity.ok(Map.of(
                 "orderId", cancelled.getOrderId(),
                 "status", cancelled.getStatus(),
@@ -52,8 +47,6 @@ public class OrderController {
     public ResponseEntity<?> getOrders() {
         return ResponseEntity.ok(orderService.getOrderHistory());
     }
-
-    // --- error mapping ---
 
     @ExceptionHandler(OrderNotFoundException.class)
     public ResponseEntity<?> handleNotFound(OrderNotFoundException e) {

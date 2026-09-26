@@ -17,7 +17,7 @@ public class OrderRequest {
     public static class LineItem {
 
         private String productId;
-        private Integer quantity; // boxed so "missing" is distinguishable from 0
+        private Integer quantity;
 
         public String getProductId() {
             return productId;

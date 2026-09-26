@@ -22,7 +22,6 @@ public class OrderItemEntity {
     private int quantity;
 
     protected OrderItemEntity() {
-        // required by JPA
     }
 
     OrderItemEntity(OrderEntity order, String productId, int quantity) {

@@ -129,3 +129,139 @@ Notification, clearly. It's already the loosest-coupled of the three: it consume
 The changes are correspondingly small. I'd replace `ApplicationEventPublisher.publishEvent(...)` with a broker publish, ideally behind an interface so the calling code barely changes; add an outbox table and relay so a committed order can't lose its event; move the `notifications` table into the new service's own database rather than sharing Postgres; swap `@EventListener` for a broker listener annotation; and make the handler idempotent by deduplicating on an event ID, since at-least-once delivery will replay events. The event classes themselves would move into a shared contract library or be redefined as a published JSON schema.
 
 Extracting Inventory first would be the worse choice: it's the module Order calls synchronously and transactionally, multiple times per request, and it's the one whose correctness actually matters — pulling it out means immediately taking on the entire saga/compensation problem from question 1 just to keep stock counts honest.
+
+# Modular Monolith — Order, Inventory, Notification & Supplier ACL (Lab 3)
+
+Builds on Lab 2 by adding a fourth module, `edu.cit.abella.supplier`, that
+wraps LegacySupply — an external, XML-only, unreliable supplier system —
+behind an Anti-Corruption Layer, so none of its quirks leak into Order or
+Inventory.
+
+## Module Structure
+
+```
+edu.cit.abella                  - @SpringBootApplication (+ @EnableScheduling)
+edu.cit.abella.events           - shared domain event classes
+edu.cit.abella.shop             - Order module (unchanged from Lab 2)
+edu.cit.abella.inventory        - Inventory module + 2 new listeners
+edu.cit.abella.notification     - Notification module (+ 1 new listener method)
+edu.cit.abella.supplier         - NEW: Anti-Corruption Layer for LegacySupply
+```
+
+**What's public in `supplier`, and nothing else:** `SupplierGateway`,
+`SupplierOrderResult`, `SupplierOrderStatus`. Everything else — the XML
+classes (`Ls*`), `LegacySupplyHttpClient`, `LegacySupplySessionManager`,
+`SupplierOrderServiceImpl`, the JPA entities and repositories, the two
+scheduled jobs — is package-private. Order and Inventory cannot import a
+`SupplierSku`, a `PackSize`, an XML class, or a LegacySupply status code,
+because none of those types are visible outside this package.
+
+## New Data Flow (Lab 3)
+
+```
+Inventory.reserve() drops stock below threshold
+    -> publishes LowStockEvent (unchanged from Lab 2)
+    -> NotificationListener logs it (unchanged)
+    -> AutoReorderListener (NEW, in inventory package) calls
+       SupplierGateway.placeReorder(productId, unitsNeeded)
+           -> SupplierOrderServiceImpl converts units to cases (round up),
+              persists a PENDING supplier_orders row, attempts an
+              idempotent, retried, timed-out call to LegacySupply
+
+OrderStatusPoller (NEW, @Scheduled, in supplier package) polls open orders
+    -> on Delivered, publishes SupplierOrderDeliveredEvent
+    -> InventoryReplenishmentListener (NEW, in inventory package) calls
+       InventoryService.restock() - Inventory never calls the supplier
+       module directly for this
+    -> NotificationListener logs "Restocked ..."
+```
+
+## Setup
+
+### 1. Supabase (carried over from Lab 2)
+
+Run `sql/schema.sql` in the Supabase SQL Editor — it now also creates
+`supplier_sku_mapping` and `supplier_orders`, with **placeholder** SKU
+mapping rows you must replace (see step 3 below and `INTEGRATION.md`).
+
+### 2. LegacySupply credentials
+
+```bash
+export LS_CLIENT_ID="23-4152-359"
+export LS_API_KEY="LSK-AC636F11075367E213D9"
+```
+PowerShell:
+```powershell
+$env:LS_CLIENT_ID="23-4152-359"
+$env:LS_API_KEY="LSK-AC636F11075367E213D9"
+```
+Never commit these. `.gitignore` already excludes `.env` files, but double
+check you haven't pasted the key into `application.properties` directly.
+
+### 3. Discover your real catalog (Part B) — do this before running the app for real
+
+Import `postman/LegacySupply_Discovery.postman_collection.json`, set
+`clientId`/`apiKey` in the collection variables, and run requests 1–3 to
+get your real `SupplierSku`/`PackSize` values. Update:
+- `sql/schema.sql`'s `supplier_sku_mapping` insert (or run an `UPDATE`
+  directly in Supabase if you've already executed the script once)
+- `INTEGRATION.md`'s mapping table
+
+Without this step, every reorder will fail with `E-SKU-02` (unknown item),
+be marked `FAILED`, and nothing further will happen for that product.
+
+### 4. Run
+
+```bash
+cd backend && mvn spring-boot:run     # http://localhost:8080
+cd frontend && npm install && npm run dev   # http://localhost:5173
+```
+
+## Resilience Design (Part D)
+
+- **Timeout:** `RestTemplateConfig` sets both connect and read timeout to
+  `legacysupply.timeout-ms` (default 3000ms).
+- **Retry with backoff, max 3 attempts:** `RetryingCaller`, used by both
+  the immediate synchronous send (`SupplierOrderServiceImpl.attemptSubmission`)
+  and the scheduled resend (`ReorderQueueProcessor`). Only retries
+  transient failures (`NETWORK_OR_TIMEOUT`, `RATE_LIMIT`, `SERVER_ERROR`) —
+  validation errors like a bad SKU are marked `FAILED` immediately, since
+  retrying an inherently wrong request would just waste quota.
+- **No duplicate purchase orders:** `SupplierOrderEntity.requestId` is
+  derived from the row's own database id (`"req-" + id`) and persisted
+  before the first network attempt — so it is identical across every
+  retry AND survives an app restart. On top of that,
+  `LegacySupplyHttpClient.findExistingByBuyerRef()` checks whether an
+  order already exists under this `BuyerRef` before every submission
+  attempt (including scheduled retries), as a second safeguard against a
+  lost response causing a resend.
+- **No lost reorders:** the `supplier_orders` row is persisted as
+  `PENDING` *before* any network call is made. If that call fails for any
+  reason — including the JVM crashing — the row is already durable, and
+  `ReorderQueueProcessor` (`@Scheduled`) resends anything still `PENDING`
+  on its next run.
+
+## Event Listeners: Synchronous, Same As Lab 2
+
+`@EventListener` methods here still run synchronously, on the same thread
+and transaction as whatever published the event — same choice as Lab 2, for
+the same consistency reasons. This has one important consequence I had to
+guard against explicitly: `AutoReorderListener.onLowStock()` fires
+*inside* the same transaction as the stock reservation that triggered
+`LowStockEvent`. If placing a reorder threw an exception up through that
+listener, it would roll back the customer's order — a LegacySupply outage
+should never do that. `SupplierOrderServiceImpl.placeReorder()` therefore
+persists its `PENDING` row and then wraps the actual network attempt in a
+try/catch that swallows any exception, logging it instead. The reorder
+simply stays `PENDING` for the scheduled job to pick up; it never
+propagates back into the order transaction.
+
+## Checkpoints
+
+- Part C: at least 3 purchase orders visible on the self-check page.
+- Part D: zero duplicates, no lost reorders, visible on the self-check page.
+
+These are verified server-side from your actual traffic — running the app
+against a few real low-stock events (or calling `SupplierGateway` a few
+times via a temporary test endpoint, if you need to force it faster) is
+how you actually clear them.

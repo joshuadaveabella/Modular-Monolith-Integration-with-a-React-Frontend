@@ -2,13 +2,13 @@ const TYPE_LABELS = {
   ORDER_CONFIRMED: 'confirmed',
   ORDER_REJECTED: 'rejected',
   LOW_STOCK: 'reorder',
+  SUPPLIER_ORDER_DELIVERED: 'delivered',
 }
 
 function NotificationFeed({ notifications }) {
   return (
     <section className="panel">
       <h2>Activity Feed</h2>
-
       {notifications.length === 0 ? (
         <p className="muted">No activity yet.</p>
       ) : (

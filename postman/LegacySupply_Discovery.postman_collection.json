@@ -1,0 +1,198 @@
+{
+  "info": {
+    "name": "LegacySupply Discovery",
+    "description": "For Part B - probe LegacySupply manually before writing any Java. Fill in clientId and apiKey in the collection variables, then run requests top to bottom.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://legacysupply.onrender.com/api/v1", "type": "string" },
+    { "key": "clientId", "value": "YOUR-STUDENT-ID", "type": "string" },
+    { "key": "apiKey", "value": "YOUR-API-KEY", "type": "string" },
+    { "key": "sessionToken", "value": "", "type": "string" },
+    { "key": "supplierSku", "value": "ABC-1234", "type": "string" },
+    { "key": "poNumber", "value": "", "type": "string" },
+    { "key": "buyerRef", "value": "RO-DISCOVERY-1", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. Ping (no auth)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "https://legacysupply.onrender.com/ping", "host": ["legacysupply.onrender.com"], "path": ["ping"] }
+      }
+    },
+    {
+      "name": "2. Auth - get session token (saves sessionToken)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var xml = pm.response.text();",
+              "    var match = xml.match(/<SessionToken>(.*?)<\\/SessionToken>/);",
+              "    if (match) {",
+              "        pm.collectionVariables.set('sessionToken', match[1]);",
+              "        console.log('Session token saved:', match[1]);",
+              "        console.log('Timestamp for session-length measurement:', new Date().toISOString());",
+              "    }",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/xml" },
+          { "key": "Accept", "value": "application/xml" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "<AuthRequest>\n <ClientId>{{clientId}}</ClientId>\n <ApiKey>{{apiKey}}</ApiKey>\n</AuthRequest>"
+        },
+        "url": { "raw": "{{baseUrl}}/auth/token", "host": ["{{baseUrl}}"], "path": ["auth", "token"] }
+      }
+    },
+    {
+      "name": "3. Get catalog (your real SupplierSkus + PackSizes)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-LS-Session", "value": "{{sessionToken}}" },
+          { "key": "Accept", "value": "application/xml" }
+        ],
+        "url": { "raw": "{{baseUrl}}/catalog", "host": ["{{baseUrl}}"], "path": ["catalog"] }
+      },
+      "description": "Record every SupplierSku/PackSize you need for INTEGRATION.md's mapping table."
+    },
+    {
+      "name": "4. Place an order",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/xml" },
+          { "key": "Accept", "value": "application/xml" },
+          { "key": "X-LS-Session", "value": "{{sessionToken}}" },
+          { "key": "X-Request-Id", "value": "discovery-{{$timestamp}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "<PurchaseOrder>\n <SupplierSku>{{supplierSku}}</SupplierSku>\n <Qty>1</Qty>\n <BuyerRef>{{buyerRef}}</BuyerRef>\n</PurchaseOrder>"
+        },
+        "url": { "raw": "{{baseUrl}}/purchase-orders", "host": ["{{baseUrl}}"], "path": ["purchase-orders"] }
+      },
+      "description": "After this succeeds, copy the returned PoNumber into the poNumber variable for request 5."
+    },
+    {
+      "name": "4b. Repeat the SAME request with the SAME X-Request-Id (idempotency check)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/xml" },
+          { "key": "Accept", "value": "application/xml" },
+          { "key": "X-LS-Session", "value": "{{sessionToken}}" },
+          { "key": "X-Request-Id", "value": "discovery-fixed-id-001" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "<PurchaseOrder>\n <SupplierSku>{{supplierSku}}</SupplierSku>\n <Qty>1</Qty>\n <BuyerRef>{{buyerRef}}</BuyerRef>\n</PurchaseOrder>"
+        },
+        "url": { "raw": "{{baseUrl}}/purchase-orders", "host": ["{{baseUrl}}"], "path": ["purchase-orders"] }
+      },
+      "description": "Run this TWICE in a row with X-Request-Id unchanged. If both calls return the same PoNumber with no second order created, that confirms how de-duplication behaves - note it in INTEGRATION.md."
+    },
+    {
+      "name": "5. Track an order by PoNumber",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-LS-Session", "value": "{{sessionToken}}" },
+          { "key": "Accept", "value": "application/xml" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/purchase-orders/{{poNumber}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["purchase-orders", "{{poNumber}}"]
+        }
+      }
+    },
+    {
+      "name": "6. Track orders by BuyerRef (INSPECT THIS - see note)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-LS-Session", "value": "{{sessionToken}}" },
+          { "key": "Accept", "value": "application/xml" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/purchase-orders?buyerRef={{buyerRef}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["purchase-orders"],
+          "query": [{ "key": "buyerRef", "value": "{{buyerRef}}" }]
+        }
+      },
+      "description": "IMPORTANT: look at the raw XML response body here and find the exact tag name wrapping each repeated order (the manual doesn't specify it). Update LsPurchaseOrderList parsing in the Java code (LegacySupplyHttpClient.parseFirstOrder) if it differs from a generic XPath match."
+    },
+    {
+      "name": "7. Trigger E-SKU-02 (unknown item)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/xml" },
+          { "key": "X-LS-Session", "value": "{{sessionToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "<PurchaseOrder>\n <SupplierSku>NOT-A-REAL-SKU</SupplierSku>\n <Qty>1</Qty>\n <BuyerRef>RO-ERRTEST-SKU</BuyerRef>\n</PurchaseOrder>"
+        },
+        "url": { "raw": "{{baseUrl}}/purchase-orders", "host": ["{{baseUrl}}"], "path": ["purchase-orders"] }
+      }
+    },
+    {
+      "name": "8. Trigger E-QTY-11 (invalid quantity)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/xml" },
+          { "key": "X-LS-Session", "value": "{{sessionToken}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "<PurchaseOrder>\n <SupplierSku>{{supplierSku}}</SupplierSku>\n <Qty>0</Qty>\n <BuyerRef>RO-ERRTEST-QTY</BuyerRef>\n</PurchaseOrder>"
+        },
+        "url": { "raw": "{{baseUrl}}/purchase-orders", "host": ["{{baseUrl}}"], "path": ["purchase-orders"] }
+      }
+    },
+    {
+      "name": "9. Trigger E-AUTH-02 (missing session header)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/catalog", "host": ["{{baseUrl}}"], "path": ["catalog"] }
+      }
+    },
+    {
+      "name": "10. Trigger E-PO-04 (order not found)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "X-LS-Session", "value": "{{sessionToken}}" }],
+        "url": { "raw": "{{baseUrl}}/purchase-orders/PO-DOES-NOT-EXIST", "host": ["{{baseUrl}}"], "path": ["purchase-orders", "PO-DOES-NOT-EXIST"] }
+      }
+    },
+    {
+      "name": "11. Measure session length (wait, then retry request 3)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "X-LS-Session", "value": "{{sessionToken}}" },
+          { "key": "Accept", "value": "application/xml" }
+        ],
+        "url": { "raw": "{{baseUrl}}/catalog", "host": ["{{baseUrl}}"], "path": ["catalog"] }
+      },
+      "description": "Run request 2 (Auth) once, note the time. Then run THIS request repeatedly at increasing intervals (e.g. every 2 min) using the SAME saved sessionToken, without re-authenticating, until you get E-AUTH-03/07. The gap between login and first rejection is your measured session length - put it in INTEGRATION.md."
+    }
+  ]
+}

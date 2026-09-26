@@ -10,8 +10,6 @@ public class OrderResponse {
     private final String status;
     private final String reason;
     private final List<ItemOutcome> items;
-    // Full inventory snapshot taken after the order settled, so the
-    // frontend can refresh its table straight from the order response.
     private final List<InventoryItem> inventory;
 
     public OrderResponse(Long orderId, String status, String reason,
