@@ -1,5 +1,7 @@
 package edu.cit.abella.supplier;
 
+import org.springframework.beans.factory.annotation.Qualifier;
+import edu.cit.abella.config.AppInstance;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -20,37 +22,27 @@ import java.util.Optional;
 
 import static edu.cit.abella.supplier.LsCallException.Kind;
 
-// The one class in this package that actually knows LegacySupply speaks
-// XML over HTTP, needs a session header, and has this particular set of
-// endpoints. Everything above this (SupplierOrderServiceImpl and up)
-// only ever sees LsCallException and plain Java values.
 @Component
 class LegacySupplyHttpClient {
 
     private final RestTemplate restTemplate;
     private final LegacySupplySessionManager sessionManager;
     private final LegacySupplyProperties properties;
+    private final AppInstance appInstance;
 
-    LegacySupplyHttpClient(RestTemplate restTemplate,
+    LegacySupplyHttpClient(@Qualifier("legacySupplyRestTemplate") RestTemplate restTemplate,
                            LegacySupplySessionManager sessionManager,
-                           LegacySupplyProperties properties) {
+                           LegacySupplyProperties properties,
+                           AppInstance appInstance) {
         this.restTemplate = restTemplate;
         this.sessionManager = sessionManager;
         this.properties = properties;
+        this.appInstance = appInstance;
     }
 
-    // Result of submitting or looking up a purchase order.
     record PoOutcome(String poNumber, int statusCode, String uom) {
     }
 
-    /**
-     * POST /purchase-orders. One HTTP attempt (retry-with-backoff is the
-     * caller's job), except that a session rejection (E-AUTH-02/03/07)
-     * is handled transparently here: the session is invalidated and the
-     * request is sent again once with a fresh token before giving up.
-     * This does not count against the caller's retry budget - a session
-     * refresh isn't evidence the call itself is failing.
-     */
     PoOutcome submitPurchaseOrder(String supplierSku, int qty, String buyerRef, String requestId) {
         return withSessionRetry(() -> {
             LsPurchaseOrderRequest body = new LsPurchaseOrderRequest(supplierSku, qty, buyerRef);
@@ -70,7 +62,6 @@ class LegacySupplyHttpClient {
         });
     }
 
-    /** GET /purchase-orders/{PoNumber} */
     PoOutcome getStatus(String poNumber) {
         return withSessionRetry(() -> {
             HttpHeaders headers = xmlHeaders(sessionManager.currentToken());
@@ -88,21 +79,6 @@ class LegacySupplyHttpClient {
         });
     }
 
-    /**
-     * GET /purchase-orders?buyerRef=... - used to check for an existing
-     * order before (re)submitting, so a lost response never causes a
-     * duplicate purchase order even if X-Request-Id de-duplication were
-     * somehow bypassed.
-     *
-     * NOTE: the manual does not show the exact XML tag used for each
-     * repeated order inside PurchaseOrderList, only that it has a Count
-     * and "every order you have placed under that reference." This method
-     * therefore parses defensively with XPath instead of a strict JAXB
-     * class: it looks for the first PoNumber/StatusCode element anywhere
-     * in the document rather than assuming one specific wrapper tag name.
-     * VERIFY THIS against a real response from your own account (Part B)
-     * and tighten it if you can - see INTEGRATION.md.
-     */
     Optional<PoOutcome> findExistingByBuyerRef(String buyerRef) {
         return withSessionRetry(() -> {
             HttpHeaders headers = xmlHeaders(sessionManager.currentToken());
@@ -157,6 +133,9 @@ class LegacySupplyHttpClient {
         headers.setContentType(MediaType.APPLICATION_XML);
         headers.setAccept(List.of(MediaType.APPLICATION_XML));
         headers.set("X-LS-Session", sessionToken);
+        // Lab 4 requirement - every LegacySupply call carries the same
+        // instance id used on Tiangge calls.
+        headers.set("X-Client-Instance", appInstance.getInstanceId());
         return headers;
     }
 
@@ -166,7 +145,7 @@ class LegacySupplyHttpClient {
         } catch (LsCallException e) {
             if (e.kind == Kind.AUTH) {
                 sessionManager.invalidate();
-                return call.get(); // one fresh-session retry; propagates if this also fails
+                return call.get();
             }
             throw e;
         }
@@ -174,8 +153,6 @@ class LegacySupplyHttpClient {
 
     private LsCallException classify(RestClientException e) {
         if (e instanceof ResourceAccessException) {
-            // Connect/read timeout, DNS failure, connection refused - no
-            // HTTP response was ever received.
             return new LsCallException(Kind.NETWORK_OR_TIMEOUT, null,
                     "No response from LegacySupply: " + e.getMessage(), e);
         }
@@ -191,8 +168,7 @@ class LegacySupplyHttpClient {
                 code = error.code;
                 message = error.message;
             } catch (RuntimeException parseFailure) {
-                // Body wasn't a parseable LSError - fall back to the raw
-                // status/message. Worth a line in INTEGRATION.md if you see it.
+                // leave code/message as the fallback above
             }
 
             Kind kind = switch (status.value()) {

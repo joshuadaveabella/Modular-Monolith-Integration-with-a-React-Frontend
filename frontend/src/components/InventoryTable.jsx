@@ -3,15 +3,8 @@ function InventoryTable({ items, threshold }) {
     <section className="panel">
       <h2>Inventory</h2>
       <p className="muted">Rows below {threshold} units are flagged for reorder.</p>
-
       <table className="data-table">
-        <thead>
-          <tr>
-            <th>Product ID</th>
-            <th>Name</th>
-            <th>Stock</th>
-          </tr>
-        </thead>
+        <thead><tr><th>Product ID</th><th>Name</th><th>Stock</th></tr></thead>
         <tbody>
           {items.map((item) => {
             const out = item.stock === 0

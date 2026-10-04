@@ -12,15 +12,7 @@ public class InventoryItem {
         this.stock = stock;
     }
 
-    public String getProductId() {
-        return productId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public int getStock() {
-        return stock;
-    }
+    public String getProductId() { return productId; }
+    public String getName() { return name; }
+    public int getStock() { return stock; }
 }

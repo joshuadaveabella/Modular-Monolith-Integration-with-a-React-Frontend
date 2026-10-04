@@ -15,6 +15,7 @@ public class OrderEntity {
     @Column(name = "order_id")
     private Long orderId;
 
+    // CONFIRMED | REJECTED | CANCELLED | BACKORDERED (Lab 4)
     @Column(nullable = false)
     private String status;
 
@@ -38,31 +39,11 @@ public class OrderEntity {
         items.add(new OrderItemEntity(this, productId, quantity));
     }
 
-    public Long getOrderId() {
-        return orderId;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getReason() {
-        return reason;
-    }
-
-    public void setReason(String reason) {
-        this.reason = reason;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public List<OrderItemEntity> getItems() {
-        return items;
-    }
+    public Long getOrderId() { return orderId; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public String getReason() { return reason; }
+    public void setReason(String reason) { this.reason = reason; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public List<OrderItemEntity> getItems() { return items; }
 }

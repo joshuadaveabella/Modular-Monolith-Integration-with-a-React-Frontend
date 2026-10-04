@@ -20,28 +20,13 @@ public class OrderSummary {
         this.items = items;
     }
 
-    public Long getOrderId() {
-        return orderId;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public String getReason() {
-        return reason;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public List<Line> getItems() {
-        return items;
-    }
+    public Long getOrderId() { return orderId; }
+    public String getStatus() { return status; }
+    public String getReason() { return reason; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public List<Line> getItems() { return items; }
 
     public static class Line {
-
         private final String productId;
         private final int quantity;
 
@@ -50,12 +35,7 @@ public class OrderSummary {
             this.quantity = quantity;
         }
 
-        public String getProductId() {
-            return productId;
-        }
-
-        public int getQuantity() {
-            return quantity;
-        }
+        public String getProductId() { return productId; }
+        public int getQuantity() { return quantity; }
     }
 }

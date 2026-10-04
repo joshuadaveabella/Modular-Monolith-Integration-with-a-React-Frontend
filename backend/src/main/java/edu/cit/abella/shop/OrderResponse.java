@@ -21,23 +21,9 @@ public class OrderResponse {
         this.inventory = inventory;
     }
 
-    public Long getOrderId() {
-        return orderId;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public String getReason() {
-        return reason;
-    }
-
-    public List<ItemOutcome> getItems() {
-        return items;
-    }
-
-    public List<InventoryItem> getInventory() {
-        return inventory;
-    }
+    public Long getOrderId() { return orderId; }
+    public String getStatus() { return status; }
+    public String getReason() { return reason; }
+    public List<ItemOutcome> getItems() { return items; }
+    public List<InventoryItem> getInventory() { return inventory; }
 }

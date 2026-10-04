@@ -35,19 +35,8 @@ class NotificationEntity {
         this.createdAt = LocalDateTime.now();
     }
 
-    Long getNotificationId() {
-        return notificationId;
-    }
-
-    String getType() {
-        return type;
-    }
-
-    String getMessage() {
-        return message;
-    }
-
-    LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    Long getNotificationId() { return notificationId; }
+    String getType() { return type; }
+    String getMessage() { return message; }
+    LocalDateTime getCreatedAt() { return createdAt; }
 }

@@ -2,8 +2,6 @@ package edu.cit.abella.events;
 
 import java.util.List;
 
-// Published by OrderService when an order is CONFIRMED. Lives in a neutral
-// package so no module has to import another module's package directly.
 public class OrderPlacedEvent {
 
     private final Long orderId;
@@ -16,15 +14,7 @@ public class OrderPlacedEvent {
         this.totalQuantity = totalQuantity;
     }
 
-    public Long getOrderId() {
-        return orderId;
-    }
-
-    public List<String> getProductIds() {
-        return productIds;
-    }
-
-    public int getTotalQuantity() {
-        return totalQuantity;
-    }
+    public Long getOrderId() { return orderId; }
+    public List<String> getProductIds() { return productIds; }
+    public int getTotalQuantity() { return totalQuantity; }
 }

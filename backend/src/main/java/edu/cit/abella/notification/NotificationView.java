@@ -16,19 +16,8 @@ public class NotificationView {
         this.createdAt = createdAt;
     }
 
-    public Long getNotificationId() {
-        return notificationId;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
+    public Long getNotificationId() { return notificationId; }
+    public String getType() { return type; }
+    public String getMessage() { return message; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
 }

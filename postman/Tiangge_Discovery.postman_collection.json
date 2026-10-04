@@ -1,0 +1,139 @@
+{
+  "info": {
+    "name": "Tiangge Discovery (Stage 0 ONLY)",
+    "description": "WARNING: per the assignment, calls made with Postman after your app has gone live (sent a heartbeat + published a listing) count AGAINST you - 'the marketplace grades your running application... requests you send yourself earn zero.' Use this ONLY before Task 1/2 are done, to confirm exact paths/field names, then stop using it.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://legacysupply.onrender.com/tiangge/v1", "type": "string" },
+    { "key": "clientId", "value": "YOUR-STUDENT-ID", "type": "string" },
+    { "key": "apiKey", "value": "YOUR-API-KEY", "type": "string" },
+    { "key": "instanceId", "value": "discovery-instance-0001", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. Heartbeat",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{apiKey}}" },
+          { "key": "X-Client-Id", "value": "{{clientId}}" },
+          { "key": "X-Client-Instance", "value": "{{instanceId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"appName\": \"discovery-test\",\n  \"startedAt\": \"2026-01-01T00:00:00Z\",\n  \"uptimeSeconds\": 0\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/heartbeat", "host": ["{{baseUrl}}"], "path": ["heartbeat"] }
+      },
+      "description": "CONFIRM: exact path, exact field names, and what the response shape actually looks like (nextHeartbeatSeconds?)."
+    },
+    {
+      "name": "2. Publish listings",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{apiKey}}" },
+          { "key": "X-Client-Id", "value": "{{clientId}}" },
+          { "key": "X-Client-Instance", "value": "{{instanceId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  { \"sellerSku\": \"P100\", \"title\": \"Wireless Mouse\", \"supplierSku\": \"STF-8943\" }\n]"
+        },
+        "url": { "raw": "{{baseUrl}}/listings", "host": ["{{baseUrl}}"], "path": ["listings"] }
+      },
+      "description": "CONFIRM: does this accept a bare array, or does it need to be wrapped e.g. { \"listings\": [...] }?"
+    },
+    {
+      "name": "3. Publish stock",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{apiKey}}" },
+          { "key": "X-Client-Id", "value": "{{clientId}}" },
+          { "key": "X-Client-Instance", "value": "{{instanceId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  { \"sellerSku\": \"P100\", \"available\": 25 }\n]"
+        },
+        "url": { "raw": "{{baseUrl}}/stock", "host": ["{{baseUrl}}"], "path": ["stock"] }
+      }
+    },
+    {
+      "name": "4. Get feed (no cursor)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{apiKey}}" },
+          { "key": "X-Client-Id", "value": "{{clientId}}" },
+          { "key": "X-Client-Instance", "value": "{{instanceId}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/feed?limit=20", "host": ["{{baseUrl}}"], "path": ["feed"], "query": [{ "key": "limit", "value": "20" }] }
+      },
+      "description": "CONFIRM: the exact JSON shape of an ORDER_PLACED event and an ORDER_CANCELLED event, field names for lines, and the name of the cursor field in the response (nextCursor?)."
+    },
+    {
+      "name": "5. Get feed (with after=)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{apiKey}}" },
+          { "key": "X-Client-Id", "value": "{{clientId}}" },
+          { "key": "X-Client-Instance", "value": "{{instanceId}}" }
+        ],
+        "url": { "raw": "{{baseUrl}}/feed?after=0&limit=20", "host": ["{{baseUrl}}"], "path": ["feed"], "query": [{ "key": "after", "value": "0" }, { "key": "limit", "value": "20" }] }
+      },
+      "description": "CONFIRM the query param is literally named 'after' and accepts the seq value directly."
+    },
+    {
+      "name": "6. Decide an order (use a real orderId from request 4/5)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{apiKey}}" },
+          { "key": "X-Client-Id", "value": "{{clientId}}" },
+          { "key": "X-Client-Instance", "value": "{{instanceId}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"decision\": \"ACCEPTED\",\n  \"shopOrderId\": \"1\",\n  \"reason\": null\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/orders/REPLACE-WITH-REAL-ORDER-ID/decision", "host": ["{{baseUrl}}"], "path": ["orders", "REPLACE-WITH-REAL-ORDER-ID", "decision"] }
+      }
+    },
+    {
+      "name": "7. Resolve an order",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{apiKey}}" },
+          { "key": "X-Client-Id", "value": "{{clientId}}" },
+          { "key": "X-Client-Instance", "value": "{{instanceId}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"status\": \"ACCEPTED\"\n}" },
+        "url": { "raw": "{{baseUrl}}/orders/REPLACE-WITH-REAL-ORDER-ID/resolution", "host": ["{{baseUrl}}"], "path": ["orders", "REPLACE-WITH-REAL-ORDER-ID", "resolution"] }
+      }
+    },
+    {
+      "name": "8. Confirm a cancellation",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{apiKey}}" },
+          { "key": "X-Client-Id", "value": "{{clientId}}" },
+          { "key": "X-Client-Instance", "value": "{{instanceId}}" }
+        ],
+        "body": { "mode": "raw", "raw": "{\n  \"restocked\": true\n}" },
+        "url": { "raw": "{{baseUrl}}/orders/REPLACE-WITH-REAL-ORDER-ID/cancellation-confirm", "host": ["{{baseUrl}}"], "path": ["orders", "REPLACE-WITH-REAL-ORDER-ID", "cancellation-confirm"] }
+      }
+    }
+  ]
+}

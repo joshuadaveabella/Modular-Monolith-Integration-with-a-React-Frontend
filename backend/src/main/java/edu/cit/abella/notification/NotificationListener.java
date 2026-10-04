@@ -1,5 +1,6 @@
 package edu.cit.abella.notification;
 
+import edu.cit.abella.events.BackorderResolvedEvent;
 import edu.cit.abella.events.LowStockEvent;
 import edu.cit.abella.events.OrderPlacedEvent;
 import edu.cit.abella.events.OrderRejectedEvent;
@@ -7,10 +8,9 @@ import edu.cit.abella.events.SupplierOrderDeliveredEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-// Still imports only event classes from edu.cit.abella.events - no
-// reference to OrderService, InventoryService, or anything in the
-// supplier package. Adding the new delivered-order listener did not
-// require importing a single thing from edu.cit.abella.supplier.
+// Still imports only event classes - no awareness of Order, Inventory,
+// Supplier, or Channel internals, even after two more labs' worth of
+// features were bolted on.
 @Component
 class NotificationListener {
 
@@ -48,5 +48,11 @@ class NotificationListener {
         String message = "Restocked " + event.getUnitsDelivered() + " unit(s) of "
                 + event.getProductId() + " from supplier order " + event.getPoNumber();
         notificationRepository.save(new NotificationEntity("SUPPLIER_ORDER_DELIVERED", message));
+    }
+
+    @EventListener
+    void onBackorderResolved(BackorderResolvedEvent event) {
+        String message = "Backordered order " + event.getOrderId() + " resolved to " + event.getResolvedStatus();
+        notificationRepository.save(new NotificationEntity("BACKORDER_RESOLVED", message));
     }
 }

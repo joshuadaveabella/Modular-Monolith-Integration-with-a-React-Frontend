@@ -1,14 +1,28 @@
 package edu.cit.abella.supplier;
 
-// The module boundary. Inventory's AutoReorderListener depends on this
-// interface and SupplierOrderResult/SupplierOrderStatus - nothing else in
-// this package. Everything below this line in the package (XML classes,
-// the HTTP client, session handling, the SKU mapping, the entity, the
-// scheduled jobs) is package-private.
+import java.util.Optional;
+
+// The module boundary. Two methods added for Lab 4:
+//
+// hasOpenOrder() lets OrderService (shop module) decide BACKORDERED vs
+// REJECTED without ever seeing a SupplierSku or a LegacySupply status
+// code - just a boolean "is something already on the way."
+//
+// getSupplierSkuFor() exists because Tiangge's own contract requires a
+// listing to name the LegacySupply SupplierSku it restocks from - the
+// channel module needs this value by design, not because a boundary was
+// loosened for convenience.
 public interface SupplierGateway {
 
-    // Takes OUR terms - our product id and how many of OUR units we need -
-    // and returns our own result type. The unit -> case conversion and the
-    // SupplierSku lookup both happen inside the implementation.
     SupplierOrderResult placeReorder(String productId, int unitsNeeded);
+
+    boolean hasOpenOrder(String productId);
+
+    // New: total units still incoming across all open purchase orders for
+    // this product - used to check whether there's actually enough on the
+    // way to cover ANOTHER backorder, not just whether one exists.
+    int getOpenOrderUnits(String productId);
+
+    Optional<String> getSupplierSkuFor(String productId);
 }
+

@@ -8,8 +8,6 @@ import jakarta.xml.bind.Unmarshaller;
 import java.io.StringReader;
 import java.io.StringWriter;
 
-// Thin JAXB wrapper. LegacySupply is XML-only, so every request body we
-// send and every response body we read goes through this.
 final class LsXml {
 
     private LsXml() {
@@ -19,7 +17,7 @@ final class LsXml {
         try {
             JAXBContext context = JAXBContext.newInstance(value.getClass());
             Marshaller marshaller = context.createMarshaller();
-            marshaller.setProperty(Marshaller.JAXB_FRAGMENT, true); // no XML declaration needed
+            marshaller.setProperty(Marshaller.JAXB_FRAGMENT, true);
             StringWriter writer = new StringWriter();
             marshaller.marshal(value, writer);
             return writer.toString();

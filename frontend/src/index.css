@@ -29,6 +29,7 @@ button.danger { background-color: #c0392b; }
 .banner-confirmed { background-color: #eafaf0; border: 1px solid #1e8449; color: #14683a; }
 .banner-rejected, .banner-error { background-color: #fdecea; border: 1px solid #c0392b; color: #96271b; }
 .banner-cancelled { background-color: #eef2f7; border: 1px solid #64748b; color: #3f4a5a; }
+.banner-backordered { background-color: #fff8e6; border: 1px solid #b7791f; color: #92620f; }
 .outcome-list { margin: 8px 0 0; padding-left: 18px; font-size: 13px; }
 .error-text { color: #c0392b; font-size: 13px; }
 .order-list { display: flex; flex-direction: column; gap: 12px; }
@@ -40,6 +41,7 @@ button.danger { background-color: #c0392b; }
 .badge-confirmed, .badge-order_confirmed { background-color: #1e8449; color: #fff; }
 .badge-rejected, .badge-order_rejected { background-color: #c0392b; color: #fff; }
 .badge-cancelled { background-color: #64748b; color: #fff; }
+.badge-backordered, .badge-backorder_resolved { background-color: #b7791f; color: #fff; }
 .badge-low_stock { background-color: #f59e0b; color: #fff; }
 .badge-supplier_order_delivered { background-color: #2f6fed; color: #fff; }
 .feed { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-height: 340px; overflow-y: auto; }

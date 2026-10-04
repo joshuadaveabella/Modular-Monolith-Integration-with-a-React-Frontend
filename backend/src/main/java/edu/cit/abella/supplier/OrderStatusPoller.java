@@ -11,13 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-// Part E: "A scheduled job checks the status of open purchase orders and
-// maps LegacySupply's status codes to your enum... Order and Inventory
-// never call the supplier module directly for this." This class is the
-// only thing that calls LegacySupply for tracking, and the only way its
-// result reaches Inventory is the SupplierOrderDeliveredEvent published
-// below - Inventory has no reference to this class or to SupplierGateway
-// for this purpose at all.
 @Component
 class OrderStatusPoller {
 
@@ -48,10 +41,7 @@ class OrderStatusPoller {
         List<SupplierOrderEntity> open = orderRepository.findAllByStatusIn(OPEN_STATUSES).stream()
                 .filter(o -> o.getPoNumber() != null)
                 .toList();
-
-        if (open.isEmpty()) {
-            return;
-        }
+        if (open.isEmpty()) return;
 
         log.info("Polling status for {} open supplier order(s)", open.size());
 

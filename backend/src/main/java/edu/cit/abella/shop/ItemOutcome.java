@@ -12,15 +12,7 @@ public class ItemOutcome {
         this.outcome = outcome;
     }
 
-    public String getProductId() {
-        return productId;
-    }
-
-    public int getQuantity() {
-        return quantity;
-    }
-
-    public String getOutcome() {
-        return outcome;
-    }
+    public String getProductId() { return productId; }
+    public int getQuantity() { return quantity; }
+    public String getOutcome() { return outcome; }
 }

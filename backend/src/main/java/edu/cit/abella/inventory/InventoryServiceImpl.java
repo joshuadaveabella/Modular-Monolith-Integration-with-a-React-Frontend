@@ -1,5 +1,6 @@
 package edu.cit.abella.inventory;
 
+import edu.cit.abella.events.InventoryStockChangedEvent;
 import edu.cit.abella.events.LowStockEvent;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -8,8 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-// Package-private (no "public" modifier). This is what makes "Order/
-// Inventory clients may depend only on the interface" a compiler guarantee.
 @Service
 class InventoryServiceImpl implements InventoryService {
 
@@ -60,6 +59,13 @@ class InventoryServiceImpl implements InventoryService {
 
         InventoryItem item = toItem(entity);
 
+        // Task 3 (Lab 4): "Any change in your Inventory... publishes the new
+        // available quantity to Tiangge within 30 seconds... Do not publish
+        // on a timer." This event is the mechanism - Inventory itself has
+        // no idea Tiangge exists; something downstream decides what to do
+        // with it.
+        eventPublisher.publishEvent(new InventoryStockChangedEvent(entity.getProductId(), entity.getStock()));
+
         if (entity.getStock() < lowStockThreshold) {
             eventPublisher.publishEvent(new LowStockEvent(
                     entity.getProductId(), entity.getName(), entity.getStock(), lowStockThreshold));
@@ -82,6 +88,8 @@ class InventoryServiceImpl implements InventoryService {
 
         entity.setStock(entity.getStock() + quantity);
         inventoryRepository.save(entity);
+
+        eventPublisher.publishEvent(new InventoryStockChangedEvent(entity.getProductId(), entity.getStock()));
 
         return new ReservationResult(true, null, toItem(entity));
     }

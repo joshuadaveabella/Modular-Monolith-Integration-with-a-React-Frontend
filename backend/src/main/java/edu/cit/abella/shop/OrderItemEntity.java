@@ -30,15 +30,7 @@ public class OrderItemEntity {
         this.quantity = quantity;
     }
 
-    public Long getOrderItemId() {
-        return orderItemId;
-    }
-
-    public String getProductId() {
-        return productId;
-    }
-
-    public int getQuantity() {
-        return quantity;
-    }
+    public Long getOrderItemId() { return orderItemId; }
+    public String getProductId() { return productId; }
+    public int getQuantity() { return quantity; }
 }

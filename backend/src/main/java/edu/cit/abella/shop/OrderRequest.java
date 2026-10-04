@@ -6,33 +6,16 @@ public class OrderRequest {
 
     private List<LineItem> items;
 
-    public List<LineItem> getItems() {
-        return items;
-    }
-
-    public void setItems(List<LineItem> items) {
-        this.items = items;
-    }
+    public List<LineItem> getItems() { return items; }
+    public void setItems(List<LineItem> items) { this.items = items; }
 
     public static class LineItem {
-
         private String productId;
         private Integer quantity;
 
-        public String getProductId() {
-            return productId;
-        }
-
-        public void setProductId(String productId) {
-            this.productId = productId;
-        }
-
-        public Integer getQuantity() {
-            return quantity;
-        }
-
-        public void setQuantity(Integer quantity) {
-            this.quantity = quantity;
-        }
+        public String getProductId() { return productId; }
+        public void setProductId(String productId) { this.productId = productId; }
+        public Integer getQuantity() { return quantity; }
+        public void setQuantity(Integer quantity) { this.quantity = quantity; }
     }
 }

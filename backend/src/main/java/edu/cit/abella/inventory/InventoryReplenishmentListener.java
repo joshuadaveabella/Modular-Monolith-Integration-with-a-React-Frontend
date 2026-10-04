@@ -2,15 +2,16 @@ package edu.cit.abella.inventory;
 
 import edu.cit.abella.events.SupplierOrderDeliveredEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-// Satisfies "Order and Inventory never call the supplier module directly
-// for [delivery tracking]." The supplier module's OrderStatusPoller
-// publishes SupplierOrderDeliveredEvent; this class reacts to it using
-// InventoryService.restock(), which already existed from Lab 2. Inventory
-// never asks the supplier module anything - it's told, after the fact,
-// "this many units of this product arrived."
+// @Order(1): this MUST run before shop's BackorderResolutionListener, which
+// reacts to the same event and checks current stock to decide whether a
+// backordered order can now be filled. If that check ran first, it would
+// see stale (pre-delivery) stock and wrongly cancel orders that should
+// have been confirmed.
 @Component
+@Order(1)
 class InventoryReplenishmentListener {
 
     private final InventoryService inventoryService;

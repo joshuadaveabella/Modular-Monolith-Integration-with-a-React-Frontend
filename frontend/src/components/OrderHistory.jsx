@@ -19,19 +19,12 @@ function OrderHistory({ orders, onCancel, cancellingId }) {
               <span className={`badge badge-${order.status.toLowerCase()}`}>{order.status}</span>
             </div>
             <ul className="order-lines">
-              {order.items.map((line, i) => (
-                <li key={i}>{line.productId} x {line.quantity}</li>
-              ))}
+              {order.items.map((line, i) => <li key={i}>{line.productId} x {line.quantity}</li>)}
             </ul>
             {order.reason && <p className="order-reason">{order.reason}</p>}
             <p className="muted small">{new Date(order.createdAt).toLocaleString()}</p>
             {order.status === 'CONFIRMED' && (
-              <button
-                type="button"
-                className="danger"
-                onClick={() => onCancel(order.orderId)}
-                disabled={cancellingId === order.orderId}
-              >
+              <button type="button" className="danger" onClick={() => onCancel(order.orderId)} disabled={cancellingId === order.orderId}>
                 {cancellingId === order.orderId ? 'Cancelling...' : 'Cancel & Restock'}
               </button>
             )}

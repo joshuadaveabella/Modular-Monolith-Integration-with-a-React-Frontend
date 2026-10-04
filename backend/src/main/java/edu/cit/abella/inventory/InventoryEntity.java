@@ -22,19 +22,8 @@ class InventoryEntity {
     protected InventoryEntity() {
     }
 
-    String getProductId() {
-        return productId;
-    }
-
-    String getName() {
-        return name;
-    }
-
-    int getStock() {
-        return stock;
-    }
-
-    void setStock(int stock) {
-        this.stock = stock;
-    }
+    String getProductId() { return productId; }
+    String getName() { return name; }
+    int getStock() { return stock; }
+    void setStock(int stock) { this.stock = stock; }
 }

@@ -12,15 +12,7 @@ public class ReservationResult {
         this.inventory = inventory;
     }
 
-    public boolean isSuccess() {
-        return success;
-    }
-
-    public String getReason() {
-        return reason;
-    }
-
-    public InventoryItem getInventory() {
-        return inventory;
-    }
+    public boolean isSuccess() { return success; }
+    public String getReason() { return reason; }
+    public InventoryItem getInventory() { return inventory; }
 }
